@@ -3,26 +3,45 @@
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import streamlit as st
 
-from modules.bivariate_plots import generate_bivariate_plots
-from modules.chart_helpers import save_plot
-from modules.schema_detector import SchemaInfo
+from modules.chart_helpers import PlotResult, save_plot
 
 
-def render(df: pd.DataFrame, schema_info: SchemaInfo) -> None:
-    """Render the Bivariate Analysis tab.
-
-    Generates bivariate plots (correlation heatmap, scatter plots,
-    and grouped bar charts) and displays them in the Streamlit UI.
+def _show_commentary(
+    title: str,
+    commentary: dict[str, str] | None,
+) -> None:
+    """Display AI commentary or a fallback caption.
 
     Args:
-        df: The loaded DataFrame.
-        schema_info: Detected schema information.
+        title: The chart title used as a lookup key.
+        commentary: Dict mapping chart titles to commentary
+            strings, or None if commentary is unavailable.
     """
-    plots = generate_bivariate_plots(df, schema_info)
+    if commentary and title in commentary:
+        st.info(f"**AI Commentary:** {commentary[title]}")
+    else:
+        st.caption(
+            "Provide an API key to enable AI commentary."
+        )
 
+
+def render(
+    plots: list[PlotResult],
+    commentary: dict[str, str] | None = None,
+) -> None:
+    """Render the Bivariate Analysis tab.
+
+    Displays pre-generated bivariate plots. A heatmap (if
+    present as the first plot) is rendered full-width, followed
+    by remaining plots in a 3-column grid.
+
+    Args:
+        plots: Pre-generated PlotResult objects to display.
+        commentary: Dict mapping chart titles to AI commentary
+            strings. Defaults to None.
+    """
     if not plots:
         st.info("Not enough columns for bivariate analysis.")
         return
@@ -33,7 +52,7 @@ def render(df: pd.DataFrame, schema_info: SchemaInfo) -> None:
     if plots[0].plot_type == "heatmap":
         heatmap = plots[0]
         st.pyplot(heatmap.figure)
-        st.caption("AI commentary will appear here.")
+        _show_commentary(heatmap.title, commentary)
         save_plot(heatmap, "bivariate")
         plt.close(heatmap.figure)
         start_idx = 1
@@ -46,6 +65,8 @@ def render(df: pd.DataFrame, schema_info: SchemaInfo) -> None:
         for col_idx, plot_result in enumerate(row_plots):
             with cols[col_idx]:
                 st.pyplot(plot_result.figure)
-                st.caption("AI commentary will appear here.")
+                _show_commentary(
+                    plot_result.title, commentary,
+                )
                 save_plot(plot_result, "bivariate")
                 plt.close(plot_result.figure)

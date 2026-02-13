@@ -3,27 +3,44 @@
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import streamlit as st
 
-from modules.chart_helpers import save_plot
-from modules.schema_detector import SchemaInfo
-from modules.univariate_plots import generate_univariate_plots
+from modules.chart_helpers import PlotResult, save_plot
 
 
-def render(df: pd.DataFrame, schema_info: SchemaInfo) -> None:
-    """Render the Univariate Analysis tab with histograms and bar charts.
-
-    Generates up to 9 univariate plots (numerical histograms and
-    categorical bar charts) and displays them in a 3-column grid.
-    Each plot is also saved to disk under the ``univariate`` subfolder.
+def _show_commentary(
+    title: str,
+    commentary: dict[str, str] | None,
+) -> None:
+    """Display AI commentary or a fallback caption.
 
     Args:
-        df: The loaded DataFrame.
-        schema_info: Detected schema information.
+        title: The chart title used as a lookup key.
+        commentary: Dict mapping chart titles to commentary
+            strings, or None if commentary is unavailable.
     """
-    plots = generate_univariate_plots(df, schema_info)
+    if commentary and title in commentary:
+        st.info(f"**AI Commentary:** {commentary[title]}")
+    else:
+        st.caption(
+            "Provide an API key to enable AI commentary."
+        )
 
+
+def render(
+    plots: list[PlotResult],
+    commentary: dict[str, str] | None = None,
+) -> None:
+    """Render the Univariate Analysis tab.
+
+    Displays pre-generated univariate plots in a 3-column grid
+    with AI commentary below each chart.
+
+    Args:
+        plots: Pre-generated PlotResult objects to display.
+        commentary: Dict mapping chart titles to AI commentary
+            strings. Defaults to None.
+    """
     if not plots:
         st.info("No columns available for univariate analysis.")
         return
@@ -34,6 +51,8 @@ def render(df: pd.DataFrame, schema_info: SchemaInfo) -> None:
         for col_idx, plot_result in enumerate(row_plots):
             with row_cols[col_idx]:
                 st.pyplot(plot_result.figure)
-                st.caption("AI commentary will appear here.")
+                _show_commentary(
+                    plot_result.title, commentary,
+                )
                 save_plot(plot_result, "univariate")
                 plt.close(plot_result.figure)
