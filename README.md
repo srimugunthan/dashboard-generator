@@ -1,6 +1,12 @@
 # CSV Dashboard Generator
 
 A Streamlit application that lets you upload a CSV dataset and optionally provide a schema description to automatically generate a comprehensive analytics dashboard with summary statistics, univariate plots, bivariate plots, and AI-generated insights.
+## Demo
+
+
+https://github.com/user-attachments/assets/8c17ff46-4fb4-4e11-8e31-ed5aa2f945d5
+
+
 
 ## Prerequisites
 
